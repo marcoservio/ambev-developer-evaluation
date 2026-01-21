@@ -8,6 +8,7 @@ using Ambev.DeveloperEvaluation.ORM;
 using Ambev.DeveloperEvaluation.WebApi.Middleware;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using Serilog;
 
 namespace Ambev.DeveloperEvaluation.WebApi;
@@ -27,7 +28,42 @@ public class Program
             builder.Services.AddEndpointsApiExplorer();
 
             builder.AddBasicHealthChecks();
-            builder.Services.AddSwaggerGen();
+
+            const string AUTHENTICATION_TYPE = "Bearer";
+
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new() { Title = "DeveloperEvaluation", Version = "v1" });
+
+                options.AddSecurityDefinition(AUTHENTICATION_TYPE, new OpenApiSecurityScheme
+                {
+                    Description = @"JWT Authorization header using the Bearer scheme.
+                        Enter 'Bearer' [space] and then your token in the text input below.
+                        Example 'Bearer 12345abcdef'",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = AUTHENTICATION_TYPE
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = AUTHENTICATION_TYPE
+                            },
+                            Scheme = "oauth2",
+                            Name = AUTHENTICATION_TYPE,
+                            In = ParameterLocation.Header
+                        },
+                        new List<string>()
+                    }
+                });
+            });
 
             builder.Services.AddDbContext<DefaultContext>(options =>
                 options.UseNpgsql(
