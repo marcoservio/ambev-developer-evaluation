@@ -16,8 +16,6 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
 /// <summary>
 /// Controller for managing user operations
 /// </summary>
-[ApiController]
-[Route("api/[controller]")]
 public class UsersController : BaseController
 {
     private readonly IMediator _mediator;

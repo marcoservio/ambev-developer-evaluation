@@ -22,29 +22,32 @@ namespace Ambev.DeveloperEvaluation.WebApi.Middleware
             }
             catch (ValidationException ex)
             {
-                await HandleValidationExceptionAsync(context, ex);
+                await WriteErrorResponse(context, StatusCodes.Status400BadRequest, "Validation Failed", ex.Errors.Select(e => (ValidationErrorDetail)e));
+            }
+            catch (Exception ex)
+            {
+                await WriteErrorResponse(context, StatusCodes.Status500InternalServerError, "Unknown Error");
             }
         }
 
-        private static Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
+        private static Task WriteErrorResponse(HttpContext context, int statusCode, string message, IEnumerable<ValidationErrorDetail>? errors = null)
         {
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.StatusCode = statusCode;
 
             var response = new ApiResponse
             {
                 Success = false,
-                Message = "Validation Failed",
-                Errors = exception.Errors
-                    .Select(error => (ValidationErrorDetail)error)
+                Message = message,
+                Errors = errors ?? []
             };
 
-            var jsonOptions = new JsonSerializerOptions
+            var options = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
 
-            return context.Response.WriteAsync(JsonSerializer.Serialize(response, jsonOptions));
+            return context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
         }
     }
 }
